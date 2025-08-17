@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ligaService, equipoService, partidoService } from '../../services/api';
 import { useUserStore } from '../../stores/userStore';
+import { PageHeader, PageLayout } from '../../common';
 import type { Liga } from '../../types';
 
 interface LigaStats {
@@ -203,20 +204,22 @@ const LigaAdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard Liga</h1>
-          <p className="text-gray-600 mt-1">Gestión de ligas y competiciones</p>
-        </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Nueva Liga</span>
-        </button>
-      </div>
-
-      {/* Stats Cards */}
+    <PageLayout
+      header={
+        <PageHeader 
+          title="Dashboard Liga"
+          subtitle="Gestión de ligas y competiciones"
+          actions={
+            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>Nueva Liga</span>
+            </button>
+          }
+        />
+      }
+    >
+      <div className="space-y-6">
+        {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card) => {
           const IconComponent = card.icon;
@@ -328,7 +331,8 @@ const LigaAdminDashboard: React.FC = () => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 

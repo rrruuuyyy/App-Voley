@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import type { User, CreateUserDto, UpdateUserDto } from '../../types';
 import { userService, sedeService } from '../../services/api';
+import { PageHeader, PageLayout } from '../../common';
 import UserForm from './components/UserForm';
 import UserDeleteModal from './components/UserDeleteModal';
 
@@ -176,26 +177,24 @@ const UserManagement: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-            <Users className="mr-3 text-blue-600" />
-            Gestión de Usuarios
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Administra todos los usuarios del sistema
-          </p>
-        </div>
-        <button
-          onClick={openCreateForm}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-blue-700 transition-colors"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nuevo Usuario
-        </button>
-      </div>
+    <PageLayout
+      header={
+        <PageHeader 
+          title="Gestión de Usuarios"
+          subtitle="Administra todos los usuarios del sistema"
+          actions={
+            <button
+              onClick={openCreateForm}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nuevo Usuario
+            </button>
+          }
+        />
+      }
+    >
+      <div className="space-y-6">
 
       {/* Error Message */}
       {error && (
@@ -370,7 +369,8 @@ const UserManagement: React.FC = () => {
           onCancel={closeModals}
         />
       )}
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 

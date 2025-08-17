@@ -3,10 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useUserStore } from './stores/userStore';
 import { AuthInitializer } from './components/AuthInitializer';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import UserManagement from './pages/admin/UserManagement';
+import { UsuariosLista } from './pages/admin/modulos/usuarios';
+import { SedesLista } from './pages/admin/modulos/sedes';
+import { LigasLista, LigaDetalle } from './pages/admin/modulos/ligas';
 import LigaAdminDashboard from './pages/liga-admin/LigaAdminDashboard';
 
 // Componente para redireccionar según el rol del usuario
@@ -69,6 +72,7 @@ const ComingSoon: React.FC<{ title: string }> = ({ title }) => (
 
 function App() {
   return (
+    <ThemeProvider>
     <AuthInitializer>
       <Router>
         <Routes>
@@ -96,7 +100,23 @@ function App() {
               path="/admin/sedes" 
               element={
                 <ProtectedRoute roles={['administrador']}>
-                  <ComingSoon title="Gestión de Sedes" />
+                  <SedesLista />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/ligas" 
+              element={
+                <ProtectedRoute roles={['administrador']}>
+                  <LigasLista />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/ligas/:id" 
+              element={
+                <ProtectedRoute roles={['administrador']}>
+                  <LigaDetalle />
                 </ProtectedRoute>
               } 
             />
@@ -104,7 +124,7 @@ function App() {
               path="/admin/usuarios" 
               element={
                 <ProtectedRoute roles={['administrador']}>
-                  <UserManagement />
+                  <UsuariosLista />
                 </ProtectedRoute>
               } 
             />
@@ -234,6 +254,7 @@ function App() {
         </Routes>
       </Router>
     </AuthInitializer>
+    </ThemeProvider>
   );
 }
 
