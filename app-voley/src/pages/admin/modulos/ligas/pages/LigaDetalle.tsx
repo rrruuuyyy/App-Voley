@@ -14,7 +14,9 @@ import {
   UserPlus,
   ArrowLeft,
   Edit3,
-  Plus
+  Plus,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { 
   useLiga, 
@@ -26,8 +28,10 @@ import {
 import { PageHeader } from '../../../../../common';
 import { Modal } from '../../../../../common/components/Modal';
 import { UserSearchDropdown } from '../../../../../common/components/UserSearchDropdown';
+import { EquipoManagement } from '../../equipos/components/EquipoManagement';
 import { LigaStatusEnum, type CapitanLiga } from '../types';
 import type { Usuario } from '../../usuarios/types';
+import type { Equipo } from '../../equipos/types';
 import { useCreateUsuario } from '../../usuarios/hooks/useUsuarioQueries';
 import { UserRolesEnum } from '../../usuarios/types';
 
@@ -40,6 +44,8 @@ const LigaDetalle: React.FC = () => {
   const [showCapitanesModal, setShowCapitanesModal] = useState(false);
   const [selectedCapitanes, setSelectedCapitanes] = useState<Usuario[]>([]);
   const [showCreateUserForm, setShowCreateUserForm] = useState(false);
+  const [showEquipoModal, setShowEquipoModal] = useState(false);
+  const [selectedCapitanForEquipo, setSelectedCapitanForEquipo] = useState<CapitanLiga | null>(null);
 
   // Queries
   const { data: liga, isLoading: isLoadingLiga, error: ligaError } = useLiga(ligaId);
@@ -182,6 +188,36 @@ const LigaDetalle: React.FC = () => {
         alert('Error al finalizar liga');
       }
     }
+  };
+
+  const handleOpenEquipoModal = (capitan: CapitanLiga) => {
+    setSelectedCapitanForEquipo(capitan);
+    setShowEquipoModal(true);
+  };
+
+  const handleCloseEquipoModal = () => {
+    setSelectedCapitanForEquipo(null);
+    setShowEquipoModal(false);
+  };
+
+  const handleEquipoCreated = (equipo: Equipo) => {
+    console.log('Equipo creado:', equipo);
+    // La query se refrescará automáticamente gracias a TanStack Query
+  };
+
+  // Función para obtener el equipo de un capitán
+  const getCapitanEquipo = (capitanId: number): Equipo | null => {
+    const capitan = capitanesData?.capitanes.find(cap => cap.id === capitanId);
+    if (!capitan?.equipo) return null;
+    
+    // Mapear el equipo del capitán al tipo Equipo esperado
+    return {
+      ...capitan.equipo,
+      ligaId: ligaId,
+      capitanId: capitanId,
+      descripcion: capitan.equipo.descripcion || undefined,
+      updatedAt: undefined
+    };
   };
 
   const getStatusColor = (status: string) => {
@@ -419,11 +455,11 @@ const LigaDetalle: React.FC = () => {
           </div>
         </div>
 
-        {/* Capitanes */}
+        {/* Capitanes y Equipos */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Capitanes Asignados
+              Capitanes y Equipos
             </h2>
             {canManageCapitanes && (
               <button
@@ -442,29 +478,85 @@ const LigaDetalle: React.FC = () => {
             </div>
           ) : capitanesData && capitanesData.capitanes.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {capitanesData.capitanes.map((capitan: CapitanLiga) => (
-                <div
-                  key={capitan.id}
-                  className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                      <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              {capitanesData.capitanes.map((capitan: CapitanLiga) => {
+                const hasEquipo = !!capitan.equipo;
+
+                return (
+                  <div
+                    key={capitan.id}
+                    className="p-4 border border-gray-200 dark:border-gray-600 rounded-lg"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                          <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {capitan.nombre}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {capitan.correo}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">
+                            Asignado: {formatDate(capitan.fechaAsignacion)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {hasEquipo ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {capitan.nombre}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {capitan.correo}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Asignado: {formatDate(capitan.fechaAsignacion)}
-                      </p>
+
+                    {/* Estado del equipo */}
+                    <div className="mb-3">
+                      {hasEquipo ? (
+                        <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                          <div className="flex items-center space-x-2">
+                            <div 
+                              className="w-3 h-3 rounded-full border border-gray-300"
+                              style={{ backgroundColor: capitan.equipo!.color }}
+                            ></div>
+                            <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                              {capitan.equipo!.nombre}
+                            </span>
+                          </div>
+                          <p className="text-xs text-green-700 dark:text-green-300 mt-1">
+                            Equipo creado
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                          <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                            Sin equipo
+                          </p>
+                          <p className="text-xs text-red-700 dark:text-red-300">
+                            Necesita crear equipo
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Acciones */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => handleOpenEquipoModal(capitan)}
+                        className={`px-3 py-1 text-xs font-medium rounded ${
+                          hasEquipo
+                            ? 'text-blue-700 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800'
+                            : 'text-green-700 bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:text-green-200 dark:hover:bg-green-800'
+                        }`}
+                      >
+                        {hasEquipo ? 'Gestionar Equipo' : 'Crear Equipo'}
+                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -655,6 +747,28 @@ const LigaDetalle: React.FC = () => {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Modal de Gestión de Equipos */}
+      <Modal
+        isOpen={showEquipoModal}
+        onClose={handleCloseEquipoModal}
+        title={selectedCapitanForEquipo ? `Gestionar Equipo - ${selectedCapitanForEquipo.nombre}` : 'Gestionar Equipo'}
+        size="xl"
+      >
+        {selectedCapitanForEquipo && (
+          <EquipoManagement
+            ligaId={ligaId}
+            capitan={{
+              id: selectedCapitanForEquipo.id,
+              nombre: selectedCapitanForEquipo.nombre,
+              correo: selectedCapitanForEquipo.correo
+            }}
+            equipo={getCapitanEquipo(selectedCapitanForEquipo.id)}
+            onEquipoCreated={handleEquipoCreated}
+            onClose={handleCloseEquipoModal}
+          />
+        )}
       </Modal>
     </div>
   );

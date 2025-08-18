@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { useUserStore } from './stores/userStore';
 import { AuthInitializer } from './components/AuthInitializer';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -73,9 +74,10 @@ const ComingSoon: React.FC<{ title: string }> = ({ title }) => (
 function App() {
   return (
     <ThemeProvider>
-    <AuthInitializer>
-      <Router>
-        <Routes>
+      <AuthInitializer>
+        <Router>
+          <Toaster position="top-right" richColors />
+          <Routes>
           {/* Ruta pública de login */}
           <Route path="/login" element={<Login />} />
           

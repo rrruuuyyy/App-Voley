@@ -9,39 +9,7 @@ import type {
   ListFiltersPaginate 
 } from '../../../../../core/components/pagination';
 import { createParamsPaginate } from '../../../../../core/components/pagination';
-
-// Importar el servicio HTTP existente del proyecto
-import axios from 'axios';
-
-// Crear instancia usando la misma configuración que api.ts
-const api = axios.create({
-  baseURL: 'http://localhost:3000',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Interceptor para agregar el token de autenticación
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Interceptor para manejo de errores
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+import httpRest from '../../../../../services/httpRest';
 
 // Endpoints
 const ENDPOINTS = {
@@ -60,63 +28,56 @@ export class SedeApiService {
    */
   static async getSedes(filters: ListFiltersPaginate = {}): Promise<ResponsePaginate<Sede>> {
     const params = createParamsPaginate(filters);
-    const response = await api.get<ResponsePaginate<Sede>>(ENDPOINTS.SEDES, { params });
-    return response.data;
+    return await httpRest.get<ResponsePaginate<Sede>>(ENDPOINTS.SEDES, { params });
   }
 
   /**
    * Obtiene una sede por ID
    */
   static async getSedeById(id: number): Promise<Sede> {
-    const response = await api.get<Sede>(ENDPOINTS.SEDE_BY_ID(id));
-    return response.data;
+    return await httpRest.get<Sede>(ENDPOINTS.SEDE_BY_ID(id));
   }
 
   /**
    * Crea una nueva sede
    */
   static async createSede(data: CreateSedeRequest): Promise<Sede> {
-    const response = await api.post<Sede>(ENDPOINTS.SEDES, data);
-    return response.data;
+    return await httpRest.post<Sede>(ENDPOINTS.SEDES, data);
   }
 
   /**
    * Actualiza una sede existente
    */
   static async updateSede(id: number, data: UpdateSedeRequest): Promise<Sede> {
-    const response = await api.patch<Sede>(ENDPOINTS.SEDE_BY_ID(id), data);
-    return response.data;
+    return await httpRest.patch<Sede>(ENDPOINTS.SEDE_BY_ID(id), data);
   }
 
   /**
    * Elimina una sede (desactivación)
    */
   static async deleteSede(id: number): Promise<void> {
-    await api.delete(ENDPOINTS.SEDE_BY_ID(id));
+    await httpRest.delete(ENDPOINTS.SEDE_BY_ID(id));
   }
 
   /**
    * Cambia el estado activo/inactivo de una sede
    */
   static async toggleSedeStatus(id: number): Promise<Sede> {
-    const response = await api.patch<Sede>(ENDPOINTS.TOGGLE_STATUS(id));
-    return response.data;
+    return await httpRest.patch<Sede>(ENDPOINTS.TOGGLE_STATUS(id));
   }
 
   /**
    * Cambia explícitamente el estado de una sede
    */
   static async changeSedeStatus(id: number, active: boolean): Promise<Sede> {
-    const response = await api.patch<Sede>(ENDPOINTS.CHANGE_STATUS(id), { active });
-    return response.data;
+    return await httpRest.patch<Sede>(ENDPOINTS.CHANGE_STATUS(id), { active });
   }
 
   /**
    * Obtiene lista simplificada de sedes activas (para selects)
    */
   static async getSedesLite(): Promise<SedeLite[]> {
-    const response = await api.get<SedeLite[]>(`${ENDPOINTS.SEDES}?lite=true&active=true`);
-    return response.data;
+    return await httpRest.get<SedeLite[]>(`${ENDPOINTS.SEDES}?lite=true&active=true`);
   }
 
   /**
@@ -142,28 +103,26 @@ export class SedeApiService {
       queryParams.append('filter', params.filter);
     }
 
-    const response = await api.get<ResponsePaginate<SedeLite>>(`${ENDPOINTS.SEDES}?${queryParams.toString()}`);
-    return response.data;
+    return await httpRest.get<ResponsePaginate<SedeLite>>(`${ENDPOINTS.SEDES}?${queryParams.toString()}`);
   }
 
   /**
    * Busca sedes por término de búsqueda
    */
   static async searchSedes(searchTerm: string): Promise<Sede[]> {
-    const response = await api.get<Sede[]>(`${ENDPOINTS.SEDES}/search`, {
+    return await httpRest.get<Sede[]>(`${ENDPOINTS.SEDES}/search`, {
       params: { q: searchTerm }
     });
-    return response.data;
   }
 
   /**
    * Verifica disponibilidad de nombre de sede
    */
   static async checkSedeNameAvailability(nombre: string, excludeId?: number): Promise<boolean> {
-    const response = await api.get<{ available: boolean }>(`${ENDPOINTS.SEDES}/check-name`, {
+    const response = await httpRest.get<{ available: boolean }>(`${ENDPOINTS.SEDES}/check-name`, {
       params: { nombre, excludeId }
     });
-    return response.data.available;
+    return response.available;
   }
 
   /**
@@ -175,7 +134,6 @@ export class SedeApiService {
     totalPartidos: number;
     partidosHoy: number;
   }> {
-    const response = await api.get(`${ENDPOINTS.SEDE_BY_ID(id)}/stats`);
-    return response.data;
+    return await httpRest.get(`${ENDPOINTS.SEDE_BY_ID(id)}/stats`);
   }
 }

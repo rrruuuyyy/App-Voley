@@ -148,6 +148,18 @@ export interface CapitanLiga {
   nombre: string;
   correo: string;
   fechaAsignacion: string;
+  equipo?: {
+    id: number;
+    nombre: string;
+    color: string;
+    descripcion: string;
+    grupoNumero: number;
+    active: boolean;
+    ligaId?: number;
+    capitanId?: number;
+    createdAt: string;
+    deletedAt: string | null;
+  } | null;
 }
 
 export interface AsignarCapitanesRequest {

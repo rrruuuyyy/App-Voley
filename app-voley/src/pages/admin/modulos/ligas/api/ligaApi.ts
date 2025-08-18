@@ -12,39 +12,7 @@ import type {
   ListFiltersPaginate 
 } from '../../../../../core/components/pagination';
 import { createParamsPaginate } from '../../../../../core/components/pagination';
-
-// Importar el servicio HTTP existente del proyecto
-import axios from 'axios';
-
-// Crear instancia usando la misma configuración que api.ts
-const api = axios.create({
-  baseURL: 'http://localhost:3000',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Interceptor para agregar el token de autenticación
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Interceptor para manejo de errores
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+import httpRest from '../../../../../services/httpRest';
 
 // Endpoints
 const ENDPOINTS = {
@@ -67,71 +35,63 @@ export class LigaApiService {
    */
   static async getLigas(filters: ListFiltersPaginate = {}): Promise<ResponsePaginate<Liga>> {
     const params = createParamsPaginate(filters);
-    const response = await api.get<ResponsePaginate<Liga>>(ENDPOINTS.LIGAS, { params });
-    return response.data;
+    return await httpRest.get<ResponsePaginate<Liga>>(ENDPOINTS.LIGAS, { params });
   }
 
   /**
    * Obtiene una liga por ID
    */
   static async getLigaById(id: number): Promise<Liga> {
-    const response = await api.get<Liga>(ENDPOINTS.LIGA_BY_ID(id));
-    return response.data;
+    return await httpRest.get<Liga>(ENDPOINTS.LIGA_BY_ID(id));
   }
 
   /**
    * Crea una nueva liga
    */
   static async createLiga(data: CreateLigaRequest): Promise<Liga> {
-    const response = await api.post<Liga>(ENDPOINTS.LIGAS, data);
-    return response.data;
+    return await httpRest.post<Liga>(ENDPOINTS.LIGAS, data);
   }
 
   /**
    * Actualiza una liga existente
    */
   static async updateLiga(id: number, data: UpdateLigaRequest): Promise<Liga> {
-    const response = await api.patch<Liga>(ENDPOINTS.LIGA_BY_ID(id), data);
-    return response.data;
+    return await httpRest.patch<Liga>(ENDPOINTS.LIGA_BY_ID(id), data);
   }
 
   /**
    * Elimina una liga
    */
   static async deleteLiga(id: number): Promise<void> {
-    await api.delete(ENDPOINTS.LIGA_BY_ID(id));
+    await httpRest.delete(ENDPOINTS.LIGA_BY_ID(id));
   }
 
   /**
    * Inicia una liga (cambia status a "en_curso" y calcula automáticamente los números)
    */
   static async iniciarLiga(id: number): Promise<Liga> {
-    const response = await api.put<Liga>(ENDPOINTS.INICIAR_LIGA(id));
-    return response.data;
+    return await httpRest.put<Liga>(ENDPOINTS.INICIAR_LIGA(id));
   }
 
   /**
    * Finaliza una liga (cambia status a "finalizada")
    */
   static async finalizarLiga(id: number): Promise<Liga> {
-    const response = await api.put<Liga>(ENDPOINTS.FINALIZAR_LIGA(id));
-    return response.data;
+    return await httpRest.put<Liga>(ENDPOINTS.FINALIZAR_LIGA(id));
   }
 
   /**
    * Obtiene estadísticas calculadas de la liga
    */
   static async getEstadisticasLiga(id: number): Promise<LigaEstadisticas> {
-    const response = await api.get<LigaEstadisticas>(ENDPOINTS.ESTADISTICAS_LIGA(id));
-    return response.data;
+    return await httpRest.get<LigaEstadisticas>(ENDPOINTS.ESTADISTICAS_LIGA(id));
   }
 
   /**
    * Obtiene funciones de cálculo para estadísticas de la liga
    */
   static async getCalculosLiga(id: number): Promise<any> {
-    const response = await api.get(ENDPOINTS.CALCULOS_LIGA(id));
-    return response.data;
+    return await httpRest.get(ENDPOINTS.CALCULOS_LIGA(id));
   }
 
   /**
@@ -141,8 +101,7 @@ export class LigaApiService {
     total: number;
     capitanes: CapitanLiga[];
   }> {
-    const response = await api.get(ENDPOINTS.CAPITANES_LIGA(id));
-    return response.data;
+    return await httpRest.get(ENDPOINTS.CAPITANES_LIGA(id));
   }
 
   /**
@@ -152,36 +111,33 @@ export class LigaApiService {
     total: number;
     capitanes: CapitanLiga[];
   }> {
-    const response = await api.post(ENDPOINTS.ASIGNAR_CAPITANES(id), data);
-    return response.data;
+    return await httpRest.post(ENDPOINTS.ASIGNAR_CAPITANES(id), data);
   }
 
   /**
    * Obtiene lista simplificada de ligas activas (para selects)
    */
   static async getLigasLite(): Promise<LigaLite[]> {
-    const response = await api.get<LigaLite[]>(`${ENDPOINTS.LIGAS}?lite=true`);
-    return response.data;
+    return await httpRest.get<LigaLite[]>(`${ENDPOINTS.LIGAS}?lite=true`);
   }
 
   /**
    * Busca ligas por término de búsqueda
    */
   static async searchLigas(searchTerm: string): Promise<Liga[]> {
-    const response = await api.get<Liga[]>(`${ENDPOINTS.LIGAS}/search`, {
+    return await httpRest.get<Liga[]>(`${ENDPOINTS.LIGAS}/search`, {
       params: { q: searchTerm }
     });
-    return response.data;
   }
 
   /**
    * Verifica disponibilidad de nombre de liga
    */
   static async checkLigaNameAvailability(nombre: string, excludeId?: number): Promise<boolean> {
-    const response = await api.get<{ available: boolean }>(`${ENDPOINTS.LIGAS}/check-name`, {
+    const response = await httpRest.get<{ available: boolean }>(`${ENDPOINTS.LIGAS}/check-name`, {
       params: { nombre, excludeId }
     });
-    return response.data.available;
+    return response.available;
   }
 
   /**
@@ -194,8 +150,7 @@ export class LigaApiService {
     partidosJugados: number;
     partidosPendientes: number;
   }> {
-    const response = await api.get(`${ENDPOINTS.LIGA_BY_ID(id)}/stats`);
-    return response.data;
+    return await httpRest.get(`${ENDPOINTS.LIGA_BY_ID(id)}/stats`);
   }
 }
 
