@@ -179,3 +179,127 @@ export interface LigaEstadisticas {
   partidosPorJornada: number;
   calculado: boolean;
 }
+
+// ====================================================
+// TIPOS PARA GESTIÓN DE GRUPOS
+// ====================================================
+
+export const MetodoAsignacionEnum = {
+  BALANCEADO: 'BALANCEADO',
+  ALEATORIO: 'ALEATORIO',
+  POR_RANKING: 'POR_RANKING'
+} as const;
+
+export type MetodoAsignacion = typeof MetodoAsignacionEnum[keyof typeof MetodoAsignacionEnum];
+
+export interface GrupoDetalle {
+  grupoNumero: number;
+  cantidadEquipos: number;
+  equipos: EquipoBasico[];
+}
+
+export interface EquipoBasico {
+  id: number;
+  nombre: string;
+  capitan: {
+    id: number;
+    nombre: string;
+  };
+  color?: string;
+  descripcion?: string;
+}
+
+export interface EstadoGrupos {
+  liga: {
+    id: number;
+    nombre: string;
+    numeroGrupos: number;
+  };
+  totalEquipos: number;
+  equiposAsignados: number;
+  equiposSinAsignar: number;
+  grupos: GrupoDetalle[];
+  equiposSinGrupo: EquipoBasico[];
+}
+
+export interface AsignacionGrupo {
+  equipoId: number;
+  grupoNumero: number;
+}
+
+export interface AsignarGruposAutomaticoRequest {
+  ligaId: number;
+  metodo?: MetodoAsignacion;
+}
+
+export interface AsignarGruposMasivoRequest {
+  asignaciones: AsignacionGrupo[];
+}
+
+export interface AsignacionExitosa {
+  equipoId: number;
+  equipoNombre: string;
+  grupoAnterior: number;
+  grupoNuevo: number;
+  status: 'exitoso';
+}
+
+export interface AsignacionError {
+  equipoId: number;
+  grupoNumero: number;
+  error: string;
+  status: 'error';
+}
+
+export interface AsignacionAutomaticaResult {
+  message: string;
+  liga: {
+    id: number;
+    nombre: string;
+    numeroGrupos: number;
+  };
+  metodoUsado: MetodoAsignacion;
+  totalEquipos: number;
+  equiposPorGrupo: number;
+  asignaciones: {
+    equipoId: number;
+    equipoNombre: string;
+    grupoAsignado: number;
+  }[];
+  resumenGrupos: {
+    grupoNumero: number;
+    cantidadEquipos: number;
+    equipos: {
+      id: number;
+      nombre: string;
+    }[];
+  }[];
+}
+
+export interface AsignacionMasivaResult {
+  message: string;
+  exitosos: AsignacionExitosa[];
+  errores: AsignacionError[];
+  resumen: {
+    total: number;
+    exitosos: number;
+    errores: number;
+  };
+}
+
+export interface ValidacionGrupos {
+  liga: {
+    id: number;
+    nombre: string;
+  };
+  totalEquipos: number;
+  equiposAsignados: number;
+  equiposSinAsignar: number;
+  grupos: GrupoDetalle[];
+  validacion: {
+    esValida: boolean;
+    problemas: string[];
+    recomendaciones: string[];
+    puedeIniciarLiga: boolean;
+  };
+}

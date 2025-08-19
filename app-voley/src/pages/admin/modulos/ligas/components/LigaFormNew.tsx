@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LigaSchema, type LigaFormData } from '../schemas/liga.schema';
+import { type LigaFormData } from '../schemas/liga.schema';
 import { SistemaPuntosEnum, CriteriosDesempateEnum, type Liga } from '../types';
 import { useSedesLite } from '../../sedes/hooks/useSedeQueries';
 import { 
@@ -101,7 +101,6 @@ export const LigaForm: React.FC<LigaFormProps> = ({
 
   return (
     <FormWrapper
-      schema={LigaSchema}
       onSubmit={handleFormSubmit}
       defaultValues={defaultValues}
     >

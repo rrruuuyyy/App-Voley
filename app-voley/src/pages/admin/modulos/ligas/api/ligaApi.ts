@@ -5,7 +5,13 @@ import type {
   LigaLite,
   CapitanLiga,
   AsignarCapitanesRequest,
-  LigaEstadisticas
+  LigaEstadisticas,
+  EstadoGrupos,
+  AsignarGruposAutomaticoRequest,
+  AsignarGruposMasivoRequest,
+  AsignacionAutomaticaResult,
+  AsignacionMasivaResult,
+  ValidacionGrupos
 } from '../types';
 import type { 
   ResponsePaginate, 
@@ -25,6 +31,11 @@ const ENDPOINTS = {
   CAPITANES_LIGA: (id: number) => `/liga/${id}/capitanes`,
   ASIGNAR_CAPITANES: (id: number) => `/liga/${id}/capitanes`,
   ELIMINAR_CAPITAN: (id: number, capitanId: number) => `/liga/${id}/capitanes/${capitanId}`,
+  // Endpoints para gestión de grupos
+  GRUPOS_ESTADO: (ligaId: number) => `/equipo/grupos/liga/${ligaId}`,
+  GRUPOS_ASIGNAR_AUTOMATICO: '/equipo/grupos/asignar-automatico',
+  GRUPOS_ASIGNAR_MASIVO: '/equipo/grupos/asignar-masivo',
+  GRUPOS_VALIDAR: (ligaId: number) => `/equipo/grupos/validar/${ligaId}`,
 };
 
 /**
@@ -165,6 +176,38 @@ export class LigaApiService {
     partidosPendientes: number;
   }> {
     return await httpRest.get(`${ENDPOINTS.LIGA_BY_ID(id)}/stats`);
+  }
+
+  // ===========================
+  // GESTIÓN DE GRUPOS
+  // ===========================
+
+  /**
+   * Obtiene el estado actual de los grupos de una liga
+   */
+  static async getEstadoGrupos(ligaId: number): Promise<EstadoGrupos> {
+    return await httpRest.get<EstadoGrupos>(ENDPOINTS.GRUPOS_ESTADO(ligaId));
+  }
+
+  /**
+   * Asigna grupos automáticamente usando el método especificado
+   */
+  static async asignarGruposAutomatico(data: AsignarGruposAutomaticoRequest): Promise<AsignacionAutomaticaResult> {
+    return await httpRest.post<AsignacionAutomaticaResult>(ENDPOINTS.GRUPOS_ASIGNAR_AUTOMATICO, data);
+  }
+
+  /**
+   * Asigna múltiples equipos a grupos específicos
+   */
+  static async asignarGruposMasivo(data: AsignarGruposMasivoRequest): Promise<AsignacionMasivaResult> {
+    return await httpRest.post<AsignacionMasivaResult>(ENDPOINTS.GRUPOS_ASIGNAR_MASIVO, data);
+  }
+
+  /**
+   * Valida la configuración actual de grupos
+   */
+  static async validarConfiguracionGrupos(ligaId: number): Promise<ValidacionGrupos> {
+    return await httpRest.get<ValidacionGrupos>(ENDPOINTS.GRUPOS_VALIDAR(ligaId));
   }
 }
 

@@ -10,7 +10,6 @@ import {
   CapitanesModal, 
   CreateUserForm
 } from './LigaDetalle/components';
-import { ConfiguracionGrupos } from './LigaDetalle/components/grupos';
 import { 
   useLigaDetalle,
   useLigaActions
@@ -149,17 +148,6 @@ const LigaDetalle: React.FC = () => {
         <div className="px-6 py-6 space-y-6">
           {/* Información General */}
           <LigaInformacion liga={liga} />
-
-          {/* Configuración de Grupos - Solo si hay más de 1 grupo */}
-          {liga.numeroGrupos > 1 && liga.status === LigaStatusEnum.PROGRAMADA && (
-            <ConfiguracionGrupos 
-              ligaId={liga.id}
-              onConfiguracionCompleta={() => {
-                // Callback cuando la configuración esté completa
-                console.log('Configuración de grupos completada');
-              }}
-            />
-          )}
 
           {/* Capitanes de Equipos */}
           <LigaCapitanes

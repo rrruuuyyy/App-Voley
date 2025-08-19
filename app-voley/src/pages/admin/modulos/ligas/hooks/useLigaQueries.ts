@@ -7,7 +7,13 @@ import type {
   LigaLite,
   CapitanLiga,
   AsignarCapitanesRequest,
-  LigaEstadisticas
+  LigaEstadisticas,
+  EstadoGrupos,
+  AsignarGruposAutomaticoRequest,
+  AsignarGruposMasivoRequest,
+  AsignacionAutomaticaResult,
+  AsignacionMasivaResult,
+  ValidacionGrupos
 } from '../types';
 import type { 
   ResponsePaginate, 
@@ -320,4 +326,80 @@ export const ligaQueries = {
   useAsignarCapitanes,
   useEliminarCapitan,
   useCheckLigaNameAvailability,
+};
+
+// ===========================
+// HOOKS PARA GESTIÓN DE GRUPOS
+// ===========================
+
+/**
+ * Hook to get grupos estado
+ */
+export const useEstadoGrupos = (
+  ligaId: number,
+  options?: Omit<UseQueryOptions<EstadoGrupos, Error>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: ['liga', ligaId, 'grupos', 'estado'],
+    queryFn: () => LigaApiService.getEstadoGrupos(ligaId),
+    enabled: !!ligaId,
+    ...options,
+  });
+};
+
+/**
+ * Hook to get grupos validation
+ */
+export const useValidacionGrupos = (
+  ligaId: number,
+  options?: Omit<UseQueryOptions<ValidacionGrupos, Error>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: ['liga', ligaId, 'grupos', 'validacion'],
+    queryFn: () => LigaApiService.validarConfiguracionGrupos(ligaId),
+    enabled: !!ligaId,
+    ...options,
+  });
+};
+
+/**
+ * Hook to asignar grupos automatically
+ */
+export const useAsignarGruposAutomatico = (
+  options?: UseMutationOptions<AsignacionAutomaticaResult, Error, AsignarGruposAutomaticoRequest>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: AsignarGruposAutomaticoRequest) => 
+      LigaApiService.asignarGruposAutomatico(data),
+    onSuccess: (_, { ligaId }) => {
+      // Invalidate grupos queries
+      queryClient.invalidateQueries({ queryKey: ['liga', ligaId, 'grupos'] });
+      
+      // Invalidate equipos queries
+      queryClient.invalidateQueries({ queryKey: ['equipos', 'liga', ligaId] });
+    },
+    ...options,
+  });
+};
+
+/**
+ * Hook to asignar grupos masively
+ */
+export const useAsignarGruposMasivo = (
+  options?: UseMutationOptions<AsignacionMasivaResult, Error, AsignarGruposMasivoRequest>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: AsignarGruposMasivoRequest) => 
+      LigaApiService.asignarGruposMasivo(data),
+    onSuccess: () => {
+      // Invalidate all grupos and equipos queries
+      queryClient.invalidateQueries({ queryKey: ['liga'] });
+      queryClient.invalidateQueries({ queryKey: ['equipos'] });
+    },
+    ...options,
+  });
 };
