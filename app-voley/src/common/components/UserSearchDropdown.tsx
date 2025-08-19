@@ -12,6 +12,7 @@ interface UserSearchDropdownProps {
   clearOnSelect?: boolean;
   filterRole?: string;
   excludeUserIds?: number[];
+  searchFields?: string[]; // Campos en los que buscar
 }
 
 export const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
@@ -22,7 +23,8 @@ export const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
   className = "",
   clearOnSelect = true,
   filterRole,
-  excludeUserIds = []
+  excludeUserIds = [],
+  searchFields = ['nombre', 'correo'] // Valor por defecto
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<Usuario[]>([]);
@@ -62,9 +64,12 @@ export const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
       
       try {
         const filters: any = {
-          search: searchTerm,
+          page: 1,
           limit: 10,
-          page: 1
+          search: searchTerm,
+          searchFields: searchFields, // Usar los campos especificados en props
+          orderBy: 'nombre',
+          order: 'asc'
         };
         
         // Agregar filtro por rol si se especifica
@@ -94,7 +99,7 @@ export const UserSearchDropdown: React.FC<UserSearchDropdownProps> = ({
 
     const debounceTimer = setTimeout(searchUsers, 300);
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm, filterRole, excludeUserIds]);
+  }, [searchTerm, filterRole, excludeUserIds, searchFields]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

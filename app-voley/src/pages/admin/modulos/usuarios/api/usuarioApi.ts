@@ -20,6 +20,10 @@ const ENDPOINTS = {
   USUARIOS_ACTIVOS: '/usuario/activos',
   USUARIO_BY_EMAIL: (email: string) => `/usuario/email/${email}`,
   CHANGE_PASSWORD: (id: number) => `/usuario/${id}/change-password`,
+  USUARIOS_TEMPORALES: '/usuario/temporal',
+  USUARIOS_TEMPORALES_LIST: '/usuario/temporales',
+  QR_INFO: (qrCode: string) => `/usuario/qr-info/${qrCode}`,
+  REGISTRO_QR: '/usuario/registro-qr'
 } as const;
 
 export class UsuarioApiService {
@@ -101,5 +105,78 @@ export class UsuarioApiService {
    */
   static async getUsuarioByEmail(email: string): Promise<Usuario> {
     return await httpRest.get<Usuario>(ENDPOINTS.USUARIO_BY_EMAIL(email));
+  }
+
+  // ===========================
+  // USUARIOS TEMPORALES
+  // ===========================
+
+  /**
+   * Create temporal usuario
+   */
+  static async createUsuarioTemporal(data: {
+    nombre: string;
+    rol: string;
+    descripcion?: string;
+  }): Promise<{
+    message: string;
+    usuario: Usuario;
+    qrCode: string;
+    urlRegistro: string;
+  }> {
+    return await httpRest.post(ENDPOINTS.USUARIOS_TEMPORALES, data);
+  }
+
+  /**
+   * Get QR info
+   */
+  static async getQRInfo(qrCode: string): Promise<{
+    id: number;
+    nombre: string;
+    rol: string;
+    esUsuarioTemporal: boolean;
+    qrCode: string;
+    tieneCorreo: boolean;
+  }> {
+    return await httpRest.get(ENDPOINTS.QR_INFO(qrCode));
+  }
+
+  /**
+   * Complete registration with QR
+   */
+  static async registroConQR(data: {
+    qrCode: string;
+    correo: string;
+    password: string;
+  }): Promise<{
+    message: string;
+    usuario: Usuario;
+  }> {
+    return await httpRest.post(ENDPOINTS.REGISTRO_QR, data);
+  }
+
+  /**
+   * Get list of usuarios temporales
+   */
+  static async getUsuariosTemporales(filters?: {
+    page?: number;
+    limit?: number;
+  }): Promise<{
+    data: Usuario[];
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const params = new URLSearchParams();
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    
+    const queryString = params.toString();
+    const url = queryString ? `${ENDPOINTS.USUARIOS_TEMPORALES_LIST}?${queryString}` : ENDPOINTS.USUARIOS_TEMPORALES_LIST;
+    
+    return await httpRest.get(url);
   }
 }

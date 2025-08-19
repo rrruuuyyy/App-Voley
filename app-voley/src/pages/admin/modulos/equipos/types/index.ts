@@ -73,6 +73,11 @@ export interface AddJugadorToEquipoRequest {
   posicion?: string;
 }
 
+export interface UpdateJugadorEquipoRequest {
+  numeroJugador?: string;
+  posicion?: string;
+}
+
 // Tipos para formularios
 export interface EquipoForm {
   nombre: string;

@@ -5,7 +5,8 @@ import type {
   CreateEquipoRequest, 
   UpdateEquipoRequest,
   JugadorEquipo,
-  AddJugadorToEquipoRequest
+  AddJugadorToEquipoRequest,
+  UpdateJugadorEquipoRequest
 } from '../types';
 
 // ===========================
@@ -177,6 +178,28 @@ export const useAddJugadorToEquipo = (
 };
 
 /**
+ * Hook to update jugador data in equipo
+ */
+export const useUpdateJugadorEquipo = (
+  options?: UseMutationOptions<{ message: string; jugador: any }, Error, { equipoId: number; jugadorId: number; data: UpdateJugadorEquipoRequest }>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ equipoId, jugadorId, data }: { equipoId: number; jugadorId: number; data: UpdateJugadorEquipoRequest }) => 
+      EquipoApiService.updateJugadorEquipo(equipoId, jugadorId, data),
+    onSuccess: (_, { equipoId }) => {
+      // Invalidate jugadores list
+      queryClient.invalidateQueries({ queryKey: ['equipo', equipoId, 'jugadores'] });
+      
+      // Invalidate equipo data
+      queryClient.invalidateQueries({ queryKey: ['equipo', equipoId] });
+    },
+    ...options,
+  });
+};
+
+/**
  * Hook to remove jugador from equipo
  */
 export const useRemoveJugadorFromEquipo = (
@@ -214,5 +237,6 @@ export const equipoQueries = {
   useDeleteEquipo,
   useAssignEquipoToGroup,
   useAddJugadorToEquipo,
+  useUpdateJugadorEquipo,
   useRemoveJugadorFromEquipo,
 };

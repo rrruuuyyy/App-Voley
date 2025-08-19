@@ -198,6 +198,104 @@ export const useChangePassword = (
 // ===========================
 
 /**
+ * Hook to create usuario temporal
+ */
+export const useCreateUsuarioTemporal = (
+  options?: UseMutationOptions<{
+    message: string;
+    usuario: Usuario;
+    qrCode: string;
+    urlRegistro: string;
+  }, Error, {
+    nombre: string;
+    rol: string;
+    descripcion?: string;
+  }>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { nombre: string; rol: string; descripcion?: string }) => 
+      UsuarioApiService.createUsuarioTemporal(data),
+    onSuccess: () => {
+      // Invalidate usuarios lists to refresh
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] });
+    },
+    ...options,
+  });
+};
+
+/**
+ * Hook to get QR info
+ */
+export const useQRInfo = (
+  qrCode: string,
+  options?: Omit<UseQueryOptions<{
+    id: number;
+    nombre: string;
+    rol: string;
+    esUsuarioTemporal: boolean;
+    qrCode: string;
+    tieneCorreo: boolean;
+  }, Error>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: ['qr-info', qrCode],
+    queryFn: () => UsuarioApiService.getQRInfo(qrCode),
+    enabled: !!qrCode,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    ...options,
+  });
+};
+
+/**
+ * Hook to complete registration with QR
+ */
+export const useRegistroConQR = (
+  options?: UseMutationOptions<{
+    message: string;
+    usuario: Usuario;
+  }, Error, {
+    qrCode: string;
+    correo: string;
+    password: string;
+  }>
+) => {
+  return useMutation({
+    mutationFn: (data: { qrCode: string; correo: string; password: string }) => 
+      UsuarioApiService.registroConQR(data),
+    ...options,
+  });
+};
+
+/**
+ * Hook to get usuarios temporales
+ */
+export const useUsuariosTemporales = (
+  filters?: { page?: number; limit?: number },
+  options?: Omit<UseQueryOptions<{
+    data: Usuario[];
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }, Error>, 'queryKey' | 'queryFn'>
+) => {
+  return useQuery({
+    queryKey: ['usuarios-temporales', filters],
+    queryFn: () => UsuarioApiService.getUsuariosTemporales(filters),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    ...options,
+  });
+};
+
+// ===========================
+// PREFETCH HOOKS
+// ===========================
+
+/**
  * Hook to prefetch usuario data
  */
 export const usePrefetchUsuario = () => {

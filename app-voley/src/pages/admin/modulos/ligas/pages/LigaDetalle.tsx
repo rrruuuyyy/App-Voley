@@ -16,14 +16,16 @@ import {
   Edit3,
   Plus,
   CheckCircle,
-  XCircle
+  XCircle,
+  Trash2
 } from 'lucide-react';
 import { 
   useLiga, 
   useCapitanesLiga, 
   useAsignarCapitanes,
   useIniciarLiga,
-  useFinalizarLiga
+  useFinalizarLiga,
+  useEliminarCapitan
 } from '../hooks/useLigaQueries';
 import { PageHeader } from '../../../../../common';
 import { Modal } from '../../../../../common/components/Modal';
@@ -56,6 +58,7 @@ const LigaDetalle: React.FC = () => {
   const iniciarLigaMutation = useIniciarLiga();
   const finalizarLigaMutation = useFinalizarLiga();
   const createUsuarioMutation = useCreateUsuario();
+  const eliminarCapitanMutation = useEliminarCapitan();
 
   // Form para crear usuario
   const {
@@ -205,6 +208,30 @@ const LigaDetalle: React.FC = () => {
     // La query se refrescará automáticamente gracias a TanStack Query
   };
 
+  const handleEliminarCapitan = async (capitan: CapitanLiga) => {
+    const hasEquipo = !!capitan.equipo;
+    const confirmMessage = hasEquipo 
+      ? `¿Estás seguro de eliminar al capitán ${capitan.nombre}? Esto también eliminará su equipo "${capitan.equipo!.nombre}" y todos los jugadores asociados.`
+      : `¿Estás seguro de eliminar al capitán ${capitan.nombre}?`;
+
+    if (window.confirm(confirmMessage)) {
+      try {
+        await eliminarCapitanMutation.mutateAsync({
+          ligaId: ligaId,
+          capitanId: capitan.id
+        });
+        
+        alert(hasEquipo 
+          ? `Capitán ${capitan.nombre} y su equipo eliminados exitosamente.`
+          : `Capitán ${capitan.nombre} eliminado exitosamente.`
+        );
+      } catch (error) {
+        console.error('Error al eliminar capitán:', error);
+        alert('Error al eliminar el capitán. Por favor intenta de nuevo.');
+      }
+    }
+  };
+
   // Función para obtener el equipo de un capitán
   const getCapitanEquipo = (capitanId: number): Equipo | null => {
     const capitan = capitanesData?.capitanes.find(cap => cap.id === capitanId);
@@ -314,9 +341,9 @@ const LigaDetalle: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex-shrink-0 px-6 py-6 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <PageHeader
           title={liga.nombre}
           subtitle={liga.descripcion || 'Información de la liga'}
@@ -367,9 +394,10 @@ const LigaDetalle: React.FC = () => {
       </div>
 
       {/* Contenido */}
-      <div className="px-6 py-6 space-y-6">
-        {/* Información General */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+        <div className="px-6 py-6 space-y-6">
+          {/* Información General */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Información General
@@ -542,7 +570,14 @@ const LigaDetalle: React.FC = () => {
                     </div>
 
                     {/* Acciones */}
-                    <div className="flex justify-end">
+                    <div className="flex justify-between items-center">
+                      <button
+                        onClick={() => handleEliminarCapitan(capitan)}
+                        className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 rounded transition-colors"
+                        title="Eliminar capitán"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleOpenEquipoModal(capitan)}
                         className={`px-3 py-1 text-xs font-medium rounded ${
@@ -770,6 +805,7 @@ const LigaDetalle: React.FC = () => {
           />
         )}
       </Modal>
+    </div>
     </div>
   );
 };

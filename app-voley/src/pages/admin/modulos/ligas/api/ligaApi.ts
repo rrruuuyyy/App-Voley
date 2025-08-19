@@ -24,6 +24,7 @@ const ENDPOINTS = {
   CALCULOS_LIGA: (id: number) => `/liga/${id}/calculos`,
   CAPITANES_LIGA: (id: number) => `/liga/${id}/capitanes`,
   ASIGNAR_CAPITANES: (id: number) => `/liga/${id}/capitanes`,
+  ELIMINAR_CAPITAN: (id: number, capitanId: number) => `/liga/${id}/capitanes/${capitanId}`,
 };
 
 /**
@@ -112,6 +113,19 @@ export class LigaApiService {
     capitanes: CapitanLiga[];
   }> {
     return await httpRest.post(ENDPOINTS.ASIGNAR_CAPITANES(id), data);
+  }
+
+  /**
+   * Elimina un capitán de una liga
+   */
+  static async eliminarCapitan(id: number, capitanId: number): Promise<{
+    message: string;
+    equipoEliminado: {
+      id: number;
+      nombre: string;
+    } | null;
+  }> {
+    return await httpRest.delete(ENDPOINTS.ELIMINAR_CAPITAN(id, capitanId));
   }
 
   /**

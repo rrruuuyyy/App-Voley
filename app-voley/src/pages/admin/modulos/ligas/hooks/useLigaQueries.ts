@@ -261,6 +261,33 @@ export const useAsignarCapitanes = (
 };
 
 /**
+ * Hook to eliminar capitan
+ */
+export const useEliminarCapitan = (
+  options?: UseMutationOptions<{ message: string; equipoEliminado: { id: number; nombre: string } | null }, Error, { ligaId: number; capitanId: number }>
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ ligaId, capitanId }: { ligaId: number; capitanId: number }) => 
+      LigaApiService.eliminarCapitan(ligaId, capitanId),
+    onSuccess: (result, { ligaId }) => {
+      // Invalidate capitanes cache to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['liga', ligaId, 'capitanes'] });
+      
+      // Invalidate liga query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['liga', ligaId] });
+
+      // If an equipo was deleted, invalidate equipos cache as well
+      if (result.equipoEliminado) {
+        queryClient.invalidateQueries({ queryKey: ['liga', ligaId, 'equipos'] });
+      }
+    },
+    ...options,
+  });
+};
+
+/**
  * Hook to check liga name availability
  */
 export const useCheckLigaNameAvailability = () => {
@@ -291,5 +318,6 @@ export const ligaQueries = {
   useIniciarLiga,
   useFinalizarLiga,
   useAsignarCapitanes,
+  useEliminarCapitan,
   useCheckLigaNameAvailability,
 };

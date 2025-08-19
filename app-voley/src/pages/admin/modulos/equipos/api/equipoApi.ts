@@ -3,7 +3,8 @@ import type {
   CreateEquipoRequest, 
   UpdateEquipoRequest,
   JugadorEquipo,
-  AddJugadorToEquipoRequest
+  AddJugadorToEquipoRequest,
+  UpdateJugadorEquipoRequest
 } from '../types';
 import httpRest from '../../../../../services/httpRest';
 
@@ -14,6 +15,7 @@ const ENDPOINTS = {
   EQUIPOS_BY_LIGA: (ligaId: number) => `/equipo?ligaId=${ligaId}`,
   JUGADORES_EQUIPO: (equipoId: number) => `/equipo/${equipoId}/jugadores`,
   ADD_JUGADOR: (equipoId: number) => `/equipo/${equipoId}/jugadores`,
+  UPDATE_JUGADOR: (equipoId: number, jugadorId: number) => `/equipo/${equipoId}/jugadores/${jugadorId}`,
   REMOVE_JUGADOR: (equipoId: number, jugadorId: number) => `/equipo/${equipoId}/jugadores/${jugadorId}`,
   ASSIGN_GROUP: (equipoId: number) => `/equipo/${equipoId}/grupo`,
 } as const;
@@ -77,6 +79,13 @@ export class EquipoApiService {
    */
   static async addJugadorToEquipo(equipoId: number, data: AddJugadorToEquipoRequest): Promise<void> {
     await httpRest.post(ENDPOINTS.ADD_JUGADOR(equipoId), data);
+  }
+
+  /**
+   * Update jugador data in equipo
+   */
+  static async updateJugadorEquipo(equipoId: number, jugadorId: number, data: UpdateJugadorEquipoRequest): Promise<{ message: string; jugador: any }> {
+    return await httpRest.patch(ENDPOINTS.UPDATE_JUGADOR(equipoId, jugadorId), data);
   }
 
   /**
