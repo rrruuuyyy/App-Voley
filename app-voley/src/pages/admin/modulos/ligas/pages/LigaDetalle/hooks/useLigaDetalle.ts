@@ -10,6 +10,7 @@ import {
   useEliminarCapitan
 } from '../../../hooks/useLigaQueries';
 import { useCreateUsuario } from '../../../../usuarios/hooks/useUsuarioQueries';
+import { useEstadoVueltas } from './usePartidosQueries';
 import { LigaStatusEnum, type CapitanLiga } from '../../../types';
 import type { Usuario } from '../../../../usuarios/types';
 import { UserRolesEnum } from '../../../../usuarios/types';
@@ -38,6 +39,7 @@ export const useLigaDetalle = () => {
   // Queries
   const { data: liga, isLoading: ligaLoading, error: ligaError } = useLiga(ligaId);
   const { data: capitanesData = { capitanes: [], total: 0 }, refetch: refetchCapitanes } = useCapitanesLiga(ligaId);
+  const { data: estadoVueltas } = useEstadoVueltas(ligaId);
   const capitanes = capitanesData.capitanes || [];
 
   // Mutations
@@ -160,7 +162,11 @@ export const useLigaDetalle = () => {
   };
 
   // Permisos
-  const canManageCapitanes = liga?.status === LigaStatusEnum.PROGRAMADA;
+  // Permitir gestión de capitanes si:
+  // 1. Liga está programada, O
+  // 2. Liga está en curso Y vuelta actual es 1
+  const canManageCapitanes = liga?.status === LigaStatusEnum.PROGRAMADA || 
+    (liga?.status === LigaStatusEnum.EN_CURSO && estadoVueltas?.vueltaActual === 1);
   const canEditLiga = liga?.status === LigaStatusEnum.PROGRAMADA;
 
   return {

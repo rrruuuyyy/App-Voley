@@ -9,7 +9,9 @@ import {
   LigaCapitanes, 
   CapitanesModal, 
   CreateUserForm,
-  GestionJornadas
+  GestionJornadas,
+  ProximosPartidos,
+  TablaPosiciones
 } from './LigaDetalle/components';
 import { ConfiguracionGrupos } from './LigaDetalle/components/grupos';
 import { 
@@ -171,6 +173,16 @@ const LigaDetalle: React.FC = () => {
             onEliminarCapitan={handleEliminarCapitan}
             isEliminating={eliminarCapitanMutation.isPending}
           />
+
+          {/* Próximos Partidos - Solo si la liga está en curso */}
+          {liga.status === LigaStatusEnum.EN_CURSO && (
+            <ProximosPartidos liga={liga} />
+          )}
+
+          {/* Tabla de Posiciones - Solo si la liga está en curso */}
+          {liga.status === LigaStatusEnum.EN_CURSO && (
+            <TablaPosiciones liga={liga} />
+          )}
 
           {/* Gestión de Jornadas - Solo si la liga está en curso */}
           {liga.status === LigaStatusEnum.EN_CURSO && (
