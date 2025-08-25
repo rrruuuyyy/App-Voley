@@ -287,6 +287,9 @@ export interface AsignacionMasivaResult {
   };
 }
 
+// Exportar tipos de jornadas
+export * from './jornadas';
+
 export interface ValidacionGrupos {
   liga: {
     id: number;

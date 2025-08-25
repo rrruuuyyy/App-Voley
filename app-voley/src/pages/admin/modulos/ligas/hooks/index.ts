@@ -1,5 +1,6 @@
 // Main hooks exports
 export * from './useLigaQueries';
+export * from './useJornadasGestion';
 
 // Specific hook exports for convenience
 export {

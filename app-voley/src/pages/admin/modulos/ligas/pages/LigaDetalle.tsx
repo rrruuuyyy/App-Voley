@@ -8,7 +8,8 @@ import {
   LigaInformacion, 
   LigaCapitanes, 
   CapitanesModal, 
-  CreateUserForm
+  CreateUserForm,
+  GestionJornadas
 } from './LigaDetalle/components';
 import { ConfiguracionGrupos } from './LigaDetalle/components/grupos';
 import { 
@@ -170,6 +171,11 @@ const LigaDetalle: React.FC = () => {
             onEliminarCapitan={handleEliminarCapitan}
             isEliminating={eliminarCapitanMutation.isPending}
           />
+
+          {/* Gestión de Jornadas - Solo si la liga está en curso */}
+          {liga.status === LigaStatusEnum.EN_CURSO && (
+            <GestionJornadas liga={liga} />
+          )}
         </div>
       </div>
 
