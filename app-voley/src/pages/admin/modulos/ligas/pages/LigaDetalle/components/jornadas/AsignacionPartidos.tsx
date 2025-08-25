@@ -253,11 +253,7 @@ export const AsignacionPartidos: React.FC<AsignacionPartidosProps> = ({
     tipo: 'local' | 'visitante';
   } | null>(null);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('🎯 AsignacionPartidos: equiposDisponibles recibidos:', equiposDisponibles);
-    console.log('🎯 AsignacionPartidos: cantidad:', equiposDisponibles?.length || 0);
-  }, [equiposDisponibles]);
+
 
   // Configurar sensores para drag and drop
   const sensors = useSensors(

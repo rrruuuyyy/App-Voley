@@ -15,14 +15,11 @@ export const GestionJornadas: React.FC<GestionJornadasProps> = ({ liga }) => {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [paso, setPaso] = useState<'configuracion' | 'asignacion' | 'resumen'>('configuracion');
 
-  console.log('🏆 GestionJornadas: Liga recibida:', liga);
-
   const {
     jornadaConfig,
     partidosSlots,
     estadoLiga,
     equiposDisponibles,
-    equiposResponse,
     isCreatingJornada,
     updateJornadaConfig,
     resetJornadaConfig,
@@ -31,14 +28,9 @@ export const GestionJornadas: React.FC<GestionJornadasProps> = ({ liga }) => {
     crearJornada,
     conflictosValidation,
     estadoLoading,
-    equiposLoading
+    equiposLoading,
+    estadoError
   } = useJornadasGestion(liga.id);
-
-  // Debug logging
-  console.log('🔍 GestionJornadas: equiposDisponibles recibidos del hook:', equiposDisponibles);
-  console.log('🔍 GestionJornadas: equiposResponse completa:', equiposResponse);
-  console.log('🔍 GestionJornadas: equiposLoading:', equiposLoading);
-  console.log('🔍 GestionJornadas: liga.id:', liga.id);
 
   // Resetear al cerrar modal
   const handleCerrarModal = () => {
@@ -173,9 +165,22 @@ export const GestionJornadas: React.FC<GestionJornadasProps> = ({ liga }) => {
           </div>
         ) : (
           <div className="text-center py-4">
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-gray-500 dark:text-gray-400 mb-2">
               No se pudo cargar la información de la liga
             </p>
+            {estadoError && (
+              <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  Error: {estadoError.message || 'Error desconocido'}
+                </p>
+                <details className="mt-2">
+                  <summary className="text-xs text-red-500 cursor-pointer">Ver detalles técnicos</summary>
+                  <pre className="text-xs mt-1 p-2 bg-red-100 dark:bg-red-900/40 rounded overflow-auto">
+                    {JSON.stringify(estadoError, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
           </div>
         )}
       </div>

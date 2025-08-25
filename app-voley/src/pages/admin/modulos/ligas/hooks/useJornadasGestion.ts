@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   crearJornadaPersonalizada,
   obtenerJornadasLiga,
@@ -43,10 +43,7 @@ export const useJornadasGestion = (ligaId: number) => {
     error: estadoError
   } = useQuery({
     queryKey: ['liga-estado', ligaId],
-    queryFn: () => {
-      console.log('🔍 Obteniendo estado de liga:', ligaId);
-      return obtenerEstadoGeneralLiga(ligaId);
-    },
+    queryFn: () => obtenerEstadoGeneralLiga(ligaId),
     enabled: !!ligaId
   });
 
@@ -65,15 +62,12 @@ export const useJornadasGestion = (ligaId: number) => {
   const {
     data: equiposResponse,
     isLoading: equiposLoading,
-    refetch: refetchEquipos,
-    error: equiposError
+    refetch: refetchEquipos
   } = useQuery({
     queryKey: ['equipos-disponibles', ligaId],
     queryFn: async () => {
-      console.log('🔍 Query: Obteniendo equipos disponibles para liga:', ligaId);
       try {
         const result = await obtenerEquiposDisponibles(ligaId);
-        console.log('🔍 Query: Resultado exitoso:', result);
         return result;
       } catch (error) {
         console.error('🔍 Query: Error al obtener equipos:', error);
@@ -84,20 +78,6 @@ export const useJornadasGestion = (ligaId: number) => {
     retry: 3,
     retryDelay: 1000
   });
-
-  // Debug logging para equipos
-  useEffect(() => {
-    if (equiposResponse) {
-      console.log('✅ Respuesta completa de equipos:', equiposResponse);
-      console.log('📊 Liga info:', equiposResponse.liga);
-      console.log('📊 Total equipos:', equiposResponse.totalEquipos);
-      console.log('📊 Array de equipos:', equiposResponse.equipos);
-      console.log('📊 Cantidad de equipos:', equiposResponse.equipos?.length || 0);
-    }
-    if (equiposError) {
-      console.error('❌ Error cargando equipos:', equiposError);
-    }
-  }, [equiposResponse, equiposError]);
 
   // Mutation para crear jornada
   const crearJornadaMutation = useMutation({
@@ -163,8 +143,6 @@ export const useJornadasGestion = (ligaId: number) => {
     equiposDisponibles: (() => {
       // Extraer equipos del objeto de respuesta
       const equipos = equiposResponse?.equipos || [];
-      console.log('🎯 useJornadasGestion: Equipos extraídos de respuesta:', equipos);
-      console.log('🎯 useJornadasGestion: Cantidad de equipos:', equipos.length);
       return equipos;
     })(),
     equiposResponse, // Exposer toda la respuesta por si se necesita

@@ -162,41 +162,99 @@ export const obtenerPartidosPendientesEquipo = async (equipoId: number): Promise
  */
 export const obtenerEstadoGeneralLiga = async (ligaId: number): Promise<EstadoLiga> => {
   try {
-    // Intentar endpoint específico primero
+    // Usar el endpoint específico que ya está implementado
     const response = await httpRest.get(`/liga/${ligaId}/estado-general`);
-    return response.data;
-  } catch (error) {
-    console.warn('Endpoint /liga/{ligaId}/estado-general no disponible, construyendo desde datos básicos');
     
-    // Obtener datos básicos de la liga y sus equipos
-    const [ligaResponse, equiposResponse] = await Promise.all([
-      httpRest.get(`/liga/${ligaId}`),
-      httpRest.get(`/liga/${ligaId}/equipos`)
-    ]);
+    // Debug: Ver la estructura real de la respuesta
+    console.log('🔍 Respuesta completa del endpoint:', response);
+    console.log('🔍 Data recibido:', response.data);
+    console.log('🔍 Tipo de data:', typeof response.data);
+    console.log('🔍 Keys del data:', Object.keys(response.data || {}));
     
-    const liga = ligaResponse.data;
-    const equiposData = equiposResponse.data;
+    // Transformar la respuesta del endpoint a la estructura que espera el frontend
+    const data = response;
     
-    return {
+    // Validar que tenemos la estructura esperada
+    if (!data) {
+      throw new Error('Respuesta del endpoint está vacía');
+    }
+    
+    console.log('🔍 data.liga:', data.liga);
+    console.log('🔍 data.resumenGeneral:', data.resumenGeneral);
+    
+    // Validar campos requeridos
+    if (!data.liga || !data.liga.id) {
+      console.error('❌ Estructura de liga no válida:', data.liga);
+      throw new Error('La respuesta no contiene información válida de la liga');
+    }
+    
+    if (!data.resumenGeneral) {
+      console.error('❌ Estructura de resumenGeneral no válida:', data.resumenGeneral);
+      throw new Error('La respuesta no contiene resumen general válido');
+    }
+    
+    const estadoTransformado: EstadoLiga = {
       liga: {
-        id: liga.id,
-        nombre: liga.nombre,
-        status: liga.status,
-        vueltas: liga.vueltas || 1,
-        numeroGrupos: liga.numeroGrupos || 1,
-        sistemaPuntos: liga.sistemaPuntos || 'fivb'
+        id: data.liga.id,
+        nombre: data.liga.nombre,
+        status: data.liga.status,
+        vueltas: data.liga.vueltas,
+        numeroGrupos: data.liga.numeroGrupos,
+        sistemaPuntos: data.liga.sistemaPuntos
       },
       resumen: {
-        equiposTotal: equiposData.totalEquipos || equiposData.equipos?.length || 0,
-        partidosTotales: 0, // TODO: obtener desde endpoint de partidos
-        partidosCompletados: 0, // TODO: obtener desde endpoint de partidos
-        partidosPendientes: 0, // TODO: obtener desde endpoint de partidos
-        jornadaActual: 1,
-        porcentajeCompletado: 0
+        equiposTotal: data.resumenGeneral.equiposTotal,
+        partidosTotales: data.resumenGeneral.partidosTotales,
+        partidosCompletados: data.resumenGeneral.partidosCompletados,
+        partidosPendientes: data.resumenGeneral.partidosPendientes,
+        jornadaActual: data.resumenGeneral.jornadaActual,
+        porcentajeCompletado: data.resumenGeneral.porcentajeCompletado
       },
-      equipos: [],
-      proximasJornadas: []
+      equipos: data.equipos || [],
+      proximasJornadas: data.proximasJornadas || []
     };
+    
+    console.log('✅ Estado transformado exitosamente:', estadoTransformado);
+    return estadoTransformado;
+    
+  } catch (error) {
+    console.error('❌ Error en endpoint principal:', error);
+    // Fallback: Obtener datos básicos de la liga y sus equipos
+    try {
+      const [ligaResponse, equiposResponse] = await Promise.all([
+        httpRest.get(`/liga/${ligaId}`),
+        httpRest.get(`/liga/${ligaId}/equipos`)
+      ]);
+      
+      const liga = ligaResponse.data;
+      const equiposData = equiposResponse.data;
+      
+      const resultado: EstadoLiga = {
+        liga: {
+          id: liga.id,
+          nombre: liga.nombre,
+          status: liga.status,
+          vueltas: liga.vueltas || 1,
+          numeroGrupos: liga.numeroGrupos || 1,
+          sistemaPuntos: liga.sistemaPuntos || 'fivb'
+        },
+        resumen: {
+          equiposTotal: equiposData.totalEquipos || equiposData.equipos?.length || 0,
+          partidosTotales: 0,
+          partidosCompletados: 0,
+          partidosPendientes: 0,
+          jornadaActual: 1,
+          porcentajeCompletado: 0
+        },
+        equipos: [],
+        proximasJornadas: []
+      };
+      
+      return resultado;
+    } catch (constructError) {
+      console.error('❌ Error obteniendo estado de liga:', constructError);
+      throw constructError;
+    }
   }
 };
 
@@ -207,12 +265,9 @@ export const obtenerEquiposDisponibles = async (
   ligaId: number,
   equipoExcluido?: number
 ): Promise<EquiposDisponiblesResponse> => {
-  console.log('🌐 API: Llamando a /liga/' + ligaId + '/equipos');
-  
   try {
     // Obtener todos los equipos de la liga
     const response = await httpRest.get(`/liga/${ligaId}/equipos`);
-    console.log('🌐 API: Response completo:', response);
     console.log('🌐 API: Status:', response.status);
     console.log('🌐 API: Headers:', response.headers);
     
@@ -234,16 +289,12 @@ export const obtenerEquiposDisponibles = async (
       throw new Error('Estructura de respuesta inválida: falta propiedad equipos');
     }
     
-    console.log('🌐 API: Equipos encontrados:', data.equipos.length);
-    
     // Filtrar equipo excluido si se especifica
     if (equipoExcluido && data.equipos) {
       data.equipos = data.equipos.filter((equipo: any) => equipo.id !== equipoExcluido);
       data.totalEquipos = data.equipos.length;
-      console.log('🌐 API: Equipos después de filtrar:', data.equipos.length);
     }
 
-    console.log('🌐 API: Retornando data final:', data);
     return data;
   } catch (error) {
     console.error('🌐 API: Error en obtenerEquiposDisponibles:', error);
