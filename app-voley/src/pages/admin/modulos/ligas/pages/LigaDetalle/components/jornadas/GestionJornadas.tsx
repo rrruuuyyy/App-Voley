@@ -292,6 +292,7 @@ export const GestionJornadas: React.FC<GestionJornadasProps> = ({ liga }) => {
                 onConfigChange={updateJornadaConfig}
                 vueltaActual={vueltaActual}
                 estadoVueltas={estadoVueltas}
+                partidosVueltaInfo={partidosVueltaInfo}
               />
             )}
             {paso === 'asignacion' && (

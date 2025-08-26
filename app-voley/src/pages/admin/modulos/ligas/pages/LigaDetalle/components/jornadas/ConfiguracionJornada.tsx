@@ -24,6 +24,13 @@ interface ConfiguracionJornadaProps {
   onConfigChange: (config: Partial<JornadaConfig>) => void;
   vueltaActual?: number;
   estadoVueltas?: any;
+  partidosVueltaInfo?: {
+    vuelta: any;
+    partidos: any[];
+    partidosSinCrear: number;
+    partidosCreados: number;
+    maxPartidos: number;
+  } | null;
 }
 
 export const ConfiguracionJornada: React.FC<ConfiguracionJornadaProps> = ({
@@ -31,8 +38,11 @@ export const ConfiguracionJornada: React.FC<ConfiguracionJornadaProps> = ({
   config,
   onConfigChange,
   vueltaActual,
-  estadoVueltas
+  estadoVueltas,
+  partidosVueltaInfo
 }) => {
+  // Calcular el máximo de partidos permitidos basado en partidos pendientes
+  const maxPartidosPermitidos = partidosVueltaInfo?.partidosSinCrear || liga.maxPartidosPorDia || 10;
   // Calcular hora de finalización estimada
   const calcularHoraFinalizacion = () => {
     if (!config.horaInicio || !config.numeroPartidos) return '';
@@ -55,7 +65,7 @@ export const ConfiguracionJornada: React.FC<ConfiguracionJornadaProps> = ({
       {/* Información de vuelta actual */}
       {vueltaActual && (
         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
                 Vuelta Actual: {vueltaActual}
@@ -72,6 +82,36 @@ export const ConfiguracionJornada: React.FC<ConfiguracionJornadaProps> = ({
               </div>
             )}
           </div>
+          
+          {/* Información de partidos de la vuelta */}
+          {partidosVueltaInfo && (
+            <div className="grid grid-cols-3 gap-4 mt-3">
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {partidosVueltaInfo.partidosCreados}
+                </div>
+                <div className="text-xs text-green-700 dark:text-green-300">
+                  Creados
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                  {partidosVueltaInfo.partidosSinCrear}
+                </div>
+                <div className="text-xs text-orange-700 dark:text-orange-300">
+                  Pendientes
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  {partidosVueltaInfo.maxPartidos}
+                </div>
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  Total
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -116,15 +156,41 @@ export const ConfiguracionJornada: React.FC<ConfiguracionJornadaProps> = ({
             <input
               type="number"
               min="1"
-              value={config.numeroPartidos}
-              onChange={(e) => onConfigChange({ numeroPartidos: parseInt(e.target.value) || 1 })}
+              max={maxPartidosPermitidos}
+              onChange={(e) => {
+                const valor = parseInt(e.target.value) || 1;
+                const valorLimitado = Math.min(valor, maxPartidosPermitidos);
+                onConfigChange({ numeroPartidos: valorLimitado });
+              }}
               className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
             />
-            <span className="text-sm text-gray-500 dark:text-gray-400">partidos</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              partidos (máx: {maxPartidosPermitidos})
+            </span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            Ingresa el número de partidos que deseas programar
-          </p>
+          {partidosVueltaInfo ? (
+            <div className="text-xs space-y-1">
+              <p className="text-blue-600 dark:text-blue-400">
+                Partidos disponibles en Vuelta {vueltaActual}: {partidosVueltaInfo.partidosSinCrear}
+              </p>
+              <p className="text-gray-500 dark:text-gray-400">
+                Ya creados: {partidosVueltaInfo.partidosCreados} / {partidosVueltaInfo.maxPartidos}
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Ingresa el número de partidos que deseas programar
+            </p>
+          )}
+          
+          {/* Alerta si se alcanza el límite */}
+          {partidosVueltaInfo && partidosVueltaInfo.partidosSinCrear === 0 && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-2">
+              <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                ⚠️ No hay partidos pendientes por crear en esta vuelta
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Duración por partido */}

@@ -383,13 +383,30 @@ const AsignacionPartidos: React.FC<AsignacionPartidosProps> = ({
               </div>
               
               {/* Validación visual - solo para enfrentamientos válidos/inválidos */}
-              {slot.equipoLocal && slot.equipoVisitante && (
-                puedenEnfrentarse(slot.equipoLocal, slot.equipoVisitante) ? (
+              {slot.equipoLocal && slot.equipoVisitante && (() => {
+                // Crear un Set de enfrentamientos excluyendo el slot actual
+                const enfrentamientosExcluyendoActual = new Set<string>();
+                slots.forEach((otherSlot, otherIndex) => {
+                  if (otherIndex !== index && otherSlot.equipoLocal && otherSlot.equipoVisitante) {
+                    const equipoA = Math.min(otherSlot.equipoLocal.id, otherSlot.equipoVisitante.id);
+                    const equipoB = Math.max(otherSlot.equipoLocal.id, otherSlot.equipoVisitante.id);
+                    enfrentamientosExcluyendoActual.add(`${equipoA}-${equipoB}`);
+                  }
+                });
+                
+                const equipoMenor = Math.min(slot.equipoLocal.id, slot.equipoVisitante.id);
+                const equipoMayor = Math.max(slot.equipoLocal.id, slot.equipoVisitante.id);
+                const enfrentamientoKey = `${equipoMenor}-${equipoMayor}`;
+                
+                const esValido = !enfrentamientosRealizados.has(enfrentamientoKey) && 
+                                !enfrentamientosExcluyendoActual.has(enfrentamientoKey);
+                
+                return esValido ? (
                   <CheckCircle className="w-5 h-5 text-green-500" />
                 ) : (
                   <AlertTriangle className="w-5 h-5 text-red-500" />
-                )
-              )}
+                );
+              })()}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
@@ -429,17 +446,36 @@ const AsignacionPartidos: React.FC<AsignacionPartidosProps> = ({
 
             {/* Mensajes de error solo para enfrentamientos inválidos */}
             <div className="mt-3 space-y-1">
-              {slot.equipoLocal && slot.equipoVisitante && !puedenEnfrentarse(slot.equipoLocal, slot.equipoVisitante) && (
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span className="text-sm">
-                    {enfrentamientosRealizados.has(`${Math.min(slot.equipoLocal.id, slot.equipoVisitante.id)}-${Math.max(slot.equipoLocal.id, slot.equipoVisitante.id)}`) 
-                      ? 'Estos equipos ya se enfrentaron en esta vuelta'
-                      : 'Este enfrentamiento ya está programado en esta jornada'
-                    }
-                  </span>
-                </div>
-              )}
+              {slot.equipoLocal && slot.equipoVisitante && (() => {
+                // Crear un Set de enfrentamientos excluyendo el slot actual para validación
+                const enfrentamientosExcluyendoActual = new Set<string>();
+                slots.forEach((otherSlot, otherIndex) => {
+                  if (otherIndex !== index && otherSlot.equipoLocal && otherSlot.equipoVisitante) {
+                    const equipoA = Math.min(otherSlot.equipoLocal.id, otherSlot.equipoVisitante.id);
+                    const equipoB = Math.max(otherSlot.equipoLocal.id, otherSlot.equipoVisitante.id);
+                    enfrentamientosExcluyendoActual.add(`${equipoA}-${equipoB}`);
+                  }
+                });
+                
+                const equipoMenor = Math.min(slot.equipoLocal.id, slot.equipoVisitante.id);
+                const equipoMayor = Math.max(slot.equipoLocal.id, slot.equipoVisitante.id);
+                const enfrentamientoKey = `${equipoMenor}-${equipoMayor}`;
+                
+                const yaEnVuelta = enfrentamientosRealizados.has(enfrentamientoKey);
+                const yaEnJornada = enfrentamientosExcluyendoActual.has(enfrentamientoKey);
+                
+                return (yaEnVuelta || yaEnJornada) && (
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span className="text-sm">
+                      {yaEnVuelta 
+                        ? 'Estos equipos ya se enfrentaron en esta vuelta'
+                        : 'Este enfrentamiento ya está programado en esta jornada'
+                      }
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         ))}
