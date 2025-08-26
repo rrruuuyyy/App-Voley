@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   crearJornadaPersonalizada,
   obtenerJornadasLiga,
@@ -7,7 +7,10 @@ import {
   obtenerEquiposDisponibles,
   registrarResultadoPartido,
   validarConflictosHorarios,
-  obtenerEnfrentamientosRestantes
+  obtenerEnfrentamientosRestantes,
+  obtenerEstadoVueltas,
+  obtenerPartidosLiga,
+  obtenerPartidosPorVuelta
 } from '../api/jornadasApi';
 import type {
   ResultadoPartidoFormData,
@@ -30,11 +33,33 @@ export const useJornadasGestion = (ligaId: number) => {
     horaInicio: '18:00',
     numeroPartidos: 2,
     duracionPartido: 90,
-    descansoEntrePartidos: 30
+    descansoEntrePartidos: 30,
+    vuelta: 1 // Agregar campo para la vuelta
   });
 
   // Estado para los slots de partidos
   const [partidosSlots, setPartidosSlots] = useState<PartidoSlot[]>([]);
+
+  // Query para obtener estado de vueltas
+  const {
+    data: estadoVueltas,
+    isLoading: estadoVueltasLoading,
+    error: estadoVueltasError
+  } = useQuery({
+    queryKey: ['estado-vueltas', ligaId],
+    queryFn: () => obtenerEstadoVueltas(ligaId),
+    enabled: !!ligaId
+  });
+
+  // Query para obtener partidos ya jugados (todos)
+  const {
+    data: partidosJugados,
+    isLoading: partidosJugadosLoading
+  } = useQuery({
+    queryKey: ['partidos-jugados', ligaId],
+    queryFn: () => obtenerPartidosLiga(ligaId),
+    enabled: !!ligaId
+  });
 
   // Query para obtener estado general de la liga
   const {
@@ -99,13 +124,122 @@ export const useJornadasGestion = (ligaId: number) => {
     setJornadaConfig(prev => ({ ...prev, ...config }));
   };
 
+  // Obtener vuelta actual del endpoint de estado de vueltas
+  const vueltaActual = useMemo(() => {
+    if (estadoVueltas?.vueltaActual) {
+      return estadoVueltas.vueltaActual;
+    }
+    
+    // Fallback: calcular basándose en enfrentamientos completados si no hay estadoVueltas
+    if (!partidosJugados || !equiposResponse?.equipos || !estadoLiga?.liga?.vueltas) return 1;
+    
+    const equipos = equiposResponse.equipos;
+    const totalEquipos = equipos.length;
+    const vueltas = estadoLiga.liga.vueltas;
+    
+    if (totalEquipos < 2) return 1;
+    
+    const enfrentamientosPorVuelta = (totalEquipos * (totalEquipos - 1)) / 2;
+    const enfrentamientosCompletados = new Set<string>();
+    
+    partidosJugados.forEach((partido: any) => {
+      if (partido.status === 'FINALIZADO') {
+        const equipoA = Math.min(partido.equipoLocal.id, partido.equipoVisitante.id);
+        const equipoB = Math.max(partido.equipoLocal.id, partido.equipoVisitante.id);
+        enfrentamientosCompletados.add(`${equipoA}-${equipoB}`);
+      }
+    });
+    
+    const vueltasCompletadas = Math.floor(enfrentamientosCompletados.size / enfrentamientosPorVuelta);
+    const vueltaCalculada = vueltasCompletadas + 1;
+    
+    return Math.min(vueltaCalculada, vueltas);
+  }, [estadoVueltas, partidosJugados, equiposResponse, estadoLiga]);
+
+  // Query para obtener partidos de la vuelta actual
+  const {
+    data: partidosVueltaActual,
+    isLoading: partidosVueltaLoading
+  } = useQuery({
+    queryKey: ['partidos-vuelta', ligaId, vueltaActual],
+    queryFn: () => obtenerPartidosPorVuelta(ligaId, vueltaActual),
+    enabled: !!ligaId && vueltaActual > 0
+  });
+
+  // Obtener enfrentamientos ya realizados en la vuelta actual
+  // Preferir datos del endpoint específico de vuelta si están disponibles
+  const enfrentamientosRealizados = useMemo(() => {
+    if (!vueltaActual) return new Set<string>();
+    
+    const enfrentamientos = new Set<string>();
+    
+    // Priorizar datos del endpoint específico de vuelta
+    if (partidosVueltaActual?.partidos) {
+      partidosVueltaActual.partidos.forEach((partido: any) => {
+        // Incluir todos los partidos creados (no solo finalizados) para evitar duplicados
+        const equipoA = Math.min(partido.equipoLocal.id, partido.equipoVisitante.id);
+        const equipoB = Math.max(partido.equipoLocal.id, partido.equipoVisitante.id);
+        enfrentamientos.add(`${equipoA}-${equipoB}`);
+      });
+    } else if (partidosJugados) {
+      // Fallback a los datos generales
+      partidosJugados.forEach((partido: any) => {
+        if (partido.vuelta === vueltaActual) {
+          const equipoA = Math.min(partido.equipoLocal.id, partido.equipoVisitante.id);
+          const equipoB = Math.max(partido.equipoLocal.id, partido.equipoVisitante.id);
+          enfrentamientos.add(`${equipoA}-${equipoB}`);
+        }
+      });
+    }
+    
+    return enfrentamientos;
+  }, [partidosVueltaActual, partidosJugados, vueltaActual]);
+
+  // Información de partidos de la vuelta actual desde el nuevo endpoint
+  const partidosVueltaInfo = useMemo(() => {
+    if (!partidosVueltaActual) return null;
+    
+    return {
+      vuelta: partidosVueltaActual.vuelta,
+      partidos: partidosVueltaActual.partidos || [],
+      partidosSinCrear: partidosVueltaActual.vuelta?.partidosSinCrear || 0,
+      partidosCreados: partidosVueltaActual.vuelta?.partidosCreados || 0,
+      maxPartidos: partidosVueltaActual.vuelta?.partidosTotales || 0
+    };
+  }, [partidosVueltaActual]);
+
+  // Filtrar equipos disponibles evitando enfrentamientos repetidos
+  const equiposDisponiblesFiltered = useMemo(() => {
+    const equipos = equiposResponse?.equipos || [];
+    return equipos.map(equipo => ({
+      ...equipo,
+      enfrentamientosDisponibles: equipos.filter(otroEquipo => {
+        if (equipo.id === otroEquipo.id) return false;
+        
+        const equipoA = Math.min(equipo.id, otroEquipo.id);
+        const equipoB = Math.max(equipo.id, otroEquipo.id);
+        const claveEnfrentamiento = `${equipoA}-${equipoB}`;
+        
+        return !enfrentamientosRealizados.has(claveEnfrentamiento);
+      })
+    }));
+  }, [equiposResponse, enfrentamientosRealizados]);
+
+  // Actualizar vuelta automáticamente cuando se obtiene el estado
+  useMemo(() => {
+    if (vueltaActual && jornadaConfig.vuelta !== vueltaActual) {
+      updateJornadaConfig({ vuelta: vueltaActual });
+    }
+  }, [vueltaActual, jornadaConfig.vuelta]);
+
   const resetJornadaConfig = () => {
     setJornadaConfig({
       fecha: '',
       horaInicio: '18:00',
       numeroPartidos: 2,
       duracionPartido: 90,
-      descansoEntrePartidos: 30
+      descansoEntrePartidos: 30,
+      vuelta: vueltaActual
     });
     setPartidosSlots([]);
   };
@@ -139,18 +273,19 @@ export const useJornadasGestion = (ligaId: number) => {
     jornadaConfig,
     partidosSlots,
     estadoLiga,
+    estadoVueltas,
+    vueltaActual,
+    enfrentamientosRealizados,
+    partidosVueltaInfo, // Nueva información de partidos de la vuelta
     jornadas: jornadas?.data || [],
-    equiposDisponibles: (() => {
-      // Extraer equipos del objeto de respuesta
-      const equipos = equiposResponse?.equipos || [];
-      return equipos;
-    })(),
+    equiposDisponibles: equiposDisponiblesFiltered,
     equiposResponse, // Exposer toda la respuesta por si se necesita
     
     // Loading states
     estadoLoading,
     jornadasLoading,
     equiposLoading,
+    partidosVueltaLoading, // Loading de partidos de vuelta específica
     isCreatingJornada: crearJornadaMutation.isPending,
     isValidatingConflicts: validarConflictosMutation.isPending,
     

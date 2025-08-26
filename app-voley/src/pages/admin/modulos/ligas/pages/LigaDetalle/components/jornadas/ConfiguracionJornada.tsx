@@ -15,18 +15,23 @@ interface JornadaConfig {
   numeroPartidos: number;
   duracionPartido: number;
   descansoEntrePartidos: number;
+  vuelta?: number;
 }
 
 interface ConfiguracionJornadaProps {
   liga: Liga;
   config: JornadaConfig;
   onConfigChange: (config: Partial<JornadaConfig>) => void;
+  vueltaActual?: number;
+  estadoVueltas?: any;
 }
 
 export const ConfiguracionJornada: React.FC<ConfiguracionJornadaProps> = ({
   liga,
   config,
-  onConfigChange
+  onConfigChange,
+  vueltaActual,
+  estadoVueltas
 }) => {
   // Calcular hora de finalización estimada
   const calcularHoraFinalizacion = () => {
@@ -47,6 +52,28 @@ export const ConfiguracionJornada: React.FC<ConfiguracionJornadaProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Información de vuelta actual */}
+      {vueltaActual && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Vuelta Actual: {vueltaActual}
+              </h3>
+              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                Los partidos se programarán para esta vuelta
+              </p>
+            </div>
+            {estadoVueltas && (
+              <div className="text-right">
+                <div className="text-xs text-blue-600 dark:text-blue-400">
+                  Progreso: {estadoVueltas.vueltas?.find((v: any) => v.numero === vueltaActual)?.porcentajeCompletado?.toFixed(1) || 0}%
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Formulario de configuración */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

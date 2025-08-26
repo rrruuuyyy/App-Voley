@@ -147,6 +147,7 @@ export interface JornadaConfig {
   numeroPartidos: number;
   duracionPartido: number; // en minutos
   descansoEntrePartidos: number; // en minutos
+  vuelta?: number; // Vuelta en la que se jugará la jornada
 }
 
 // Estructura de respuesta de la API para equipos

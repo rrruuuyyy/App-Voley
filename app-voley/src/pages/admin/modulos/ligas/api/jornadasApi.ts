@@ -10,8 +10,35 @@ import type {
 } from '../types/jornadas';
 
 // ====================================================
-// GESTIÓN DE JORNADAS
+// GESTIÓN DE JORNADAS Y VUELTAS
 // ====================================================
+
+/**
+ * Obtener estado de vueltas de una liga
+ */
+export const obtenerEstadoVueltas = async (ligaId: number) => {
+  return await httpRest.get(`/partido/estado-vueltas/liga/${ligaId}`);
+};
+
+/**
+ * Obtener partidos de una liga con filtros
+ */
+export const obtenerPartidosLiga = async (ligaId: number, filtros?: { jornada?: number }) => {
+  const params = new URLSearchParams();
+  if (filtros?.jornada) {
+    params.append('jornada', filtros.jornada.toString());
+  }
+  
+  const url = `/partido/liga/${ligaId}${params.toString() ? `?${params.toString()}` : ''}`;
+  return await httpRest.get(url);
+};
+
+/**
+ * Obtener partidos de una vuelta específica
+ */
+export const obtenerPartidosPorVuelta = async (ligaId: number, vuelta: number) => {
+  return await httpRest.get(`/partido/liga/${ligaId}/vuelta/${vuelta}`);
+};
 
 /**
  * Crear una jornada personalizada
@@ -204,7 +231,7 @@ export const obtenerEstadoGeneralLiga = async (ligaId: number): Promise<EstadoLi
       },
       resumen: {
         equiposTotal: data.resumenGeneral.equiposTotal,
-        partidosTotales: data.resumenGeneral.partidosTotales,
+        partidosTotales: data.resumenGeneral.partidosTotalesQueDeberianExistir, // Usar el campo correcto
         partidosCompletados: data.resumenGeneral.partidosCompletados,
         partidosPendientes: data.resumenGeneral.partidosPendientes,
         jornadaActual: data.resumenGeneral.jornadaActual,
